@@ -14,9 +14,12 @@ protocol CoreDataStack {
   func entity<T>(entityName:String, predicate:NSPredicate) -> T?
   
   func batchDelete(entityName:String)
+  
+  func saveContext()
+  func removeEntity(_ entity:String)
 }
 
-extension CoreData {
+extension CoreDataStack {
   func createObject<T:NSManagedObject>(entityName:String) -> T {
     let entity = NSEntityDescription.entity(forEntityName: entityName, in: managedObjectContext)
     return NSManagedObject(entity: entity!, insertInto: managedObjectContext) as! T
@@ -63,5 +66,22 @@ extension CoreData {
     } catch {
       fatalError("Failed to execute request: \(error)")
     }
+  }
+  
+  func saveContext() {
+    
+    managedObjectContext.performAndWait {
+      if !self.managedObjectContext.hasChanges { return }
+      
+      do {
+        try self.managedObjectContext.save()
+      } catch {
+        fatalError("Failure to save context: \(error)")
+      }
+    }
+  }
+  
+  func removeEntity(_ entity: String) {
+    batchDelete(entityName: entity)
   }
 }
